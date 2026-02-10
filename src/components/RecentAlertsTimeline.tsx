@@ -2,16 +2,21 @@ import React from 'react';
 import { formatRelativeTime } from '../utils/timeFormatter';
 
 interface RecentAlert {
-    id: number;
+    id: string;
+    record_id: number;
     module: string;
-    timestamp: string;
-    risk_level: string;
+    type: string;
+    message: string;
     description: string;
+    risk_level: string;
+    severity: string;
+    timestamp: string;
+    status: string;
 }
 
 interface RecentAlertsTimelineProps {
     alerts: RecentAlert[];
-    onAlertClick?: (module: string) => void;
+    onAlertClick?: (alert: RecentAlert) => void;
 }
 
 const RecentAlertsTimeline: React.FC<RecentAlertsTimelineProps> = ({ alerts, onAlertClick }) => {
@@ -60,7 +65,7 @@ const RecentAlertsTimeline: React.FC<RecentAlertsTimelineProps> = ({ alerts, onA
                 {alerts.map((alert, index) => (
                     <div
                         key={index}
-                        onClick={() => onAlertClick && onAlertClick(alert.module)}
+                        onClick={() => onAlertClick && onAlertClick(alert)}
                         style={{
                             padding: '0.75rem',
                             marginBottom: '0.5rem',
@@ -97,6 +102,9 @@ const RecentAlertsTimeline: React.FC<RecentAlertsTimelineProps> = ({ alerts, onA
                         </div>
                         <div style={{ fontSize: '0.875rem', color: '#334155', paddingLeft: '1.7rem' }}>
                             {alert.description}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', paddingLeft: '1.7rem', marginTop: '0.25rem' }}>
+                            Click to view details →
                         </div>
                     </div>
                 ))}

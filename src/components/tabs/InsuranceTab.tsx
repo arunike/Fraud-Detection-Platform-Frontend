@@ -23,7 +23,10 @@ function InsuranceTab({ onUpdate }) {
     const loadHistory = async () => {
         try {
             const response = await insuranceAPI.list({ page_size: 10 });
-            setHistory(response.data.results || []);
+            // Handle both array and object with results property
+            const data = Array.isArray(response.data) ? response.data : (response.data.results || []);
+            setHistory(data);
+            console.log('Insurance History loaded:', data.length, 'items');
         } catch (err) {
             console.error("Failed to load history:", err);
         }
@@ -72,17 +75,7 @@ function InsuranceTab({ onUpdate }) {
 
     return (
         <div>
-            <h2
-                style={{
-                    marginBottom: "1.5rem",
-                    fontSize: "1.5rem",
-                    fontWeight: "bold",
-                }}
-            >
-                🛡️ Insurance Fraud Detection
-            </h2>
-
-            <div className="grid grid-2">
+            <div className="grid grid-2" style={{ marginBottom: '2rem' }}>
                 {/* Form */}
                 <div className="card">
                     <div
@@ -94,12 +87,13 @@ function InsuranceTab({ onUpdate }) {
                         }}
                     >
                         <h3 style={{ fontSize: "1.25rem", fontWeight: "600" }}>
-                            Claim Information
+                            📄 Claim Information
                         </h3>
                         <button
                             type="button"
                             onClick={generateTestData}
                             className="btn btn-secondary"
+                            style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
                         >
                             <Dice5 size={18} />
                             Generate Test Data
@@ -233,9 +227,9 @@ function InsuranceTab({ onUpdate }) {
                                     }}
                                 >
                                     Fraud Probability:{" "}
-                                    {(result.fraud_probability * 100).toFixed(
-                                        1,
-                                    )}
+                                    {result.fraud_probability !== undefined 
+                                        ? (result.fraud_probability * 100).toFixed(1)
+                                        : (result.fraud_risk || 0).toFixed(1)}
                                     %
                                 </p>
                             </div>
@@ -282,17 +276,25 @@ function InsuranceTab({ onUpdate }) {
             </div>
 
             {/* History */}
-            {history.length > 0 && (
-                <div className="card" style={{ marginTop: "1.5rem" }}>
-                    <h3
-                        style={{
-                            fontSize: "1.25rem",
-                            fontWeight: "600",
-                            marginBottom: "1rem",
-                        }}
-                    >
-                        Recent Claims
-                    </h3>
+            <div className="card" style={{ marginTop: "1.5rem" }}>
+                <h3
+                    style={{
+                        fontSize: "1.25rem",
+                        fontWeight: "600",
+                        marginBottom: "1rem",
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                    }}
+                >
+                    📅 Recent Claims
+                    <span style={{
+                        fontSize: '0.9rem',
+                        color: 'var(--gray)',
+                        fontWeight: 'normal'
+                    }}>({history.length})</span>
+                </h3>
+                {history.length > 0 ? (
                     <div style={{ overflowX: "auto" }}>
                         <table>
                             <thead>
@@ -309,18 +311,20 @@ function InsuranceTab({ onUpdate }) {
                                 {history.map((item, idx) => (
                                     <tr key={idx}>
                                         <td>{item.claim_id}</td>
-                                        <td>{item.policy_id || "-"}</td>
+                                        <td>{item.policy_id || <span style={{color: 'var(--gray)'}}>-</span>}</td>
                                         <td>
-                                            $
-                                            {parseFloat(
-                                                item.claim_amount,
-                                            ).toFixed(2)}
+                                            {item.claim_amount ? (
+                                                <strong style={{color: 'var(--primary)'}}>
+                                                    ${parseFloat(item.claim_amount).toFixed(2)}
+                                                </strong>
+                                            ) : (
+                                                <span style={{color: 'var(--gray)'}}>-</span>
+                                            )}
                                         </td>
                                         <td>
-                                            {item.fraud_risk != null
-                                                ? item.fraud_risk.toFixed(1)
-                                                : "0.0"}
-                                            %
+                                            <strong style={{color: item.fraud_risk > 50 ? 'var(--danger)' : 'var(--success)'}}>
+                                                {item.fraud_risk != null ? item.fraud_risk.toFixed(1) : "0.0"}%
+                                            </strong>
                                         </td>
                                         <td>
                                             <span
@@ -328,14 +332,14 @@ function InsuranceTab({ onUpdate }) {
                                                     (item.alerts &&
                                                         item.alerts.length >
                                                             0) ||
-                                                    item.fraud_risk > 0
+                                                    item.fraud_risk > 50
                                                         ? "badge-danger"
                                                         : "badge-success"
                                                 }`}
                                             >
                                                 {(item.alerts &&
                                                     item.alerts.length > 0) ||
-                                                item.fraud_risk > 0
+                                                item.fraud_risk > 50
                                                     ? "FLAGGED"
                                                     : "CLEAR"}
                                             </span>
@@ -348,8 +352,20 @@ function InsuranceTab({ onUpdate }) {
                             </tbody>
                         </table>
                     </div>
-                </div>
-            )}
+                ) : (
+                    <div style={{
+                        textAlign: 'center',
+                        padding: '3rem',
+                        color: 'var(--gray)',
+                        background: 'rgba(102, 126, 234, 0.03)',
+                        borderRadius: '8px'
+                    }}>
+                        <p style={{ margin: 0, fontSize: '1.1rem' }}>
+                            No claims yet. Submit a claim above to get started.
+                        </p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

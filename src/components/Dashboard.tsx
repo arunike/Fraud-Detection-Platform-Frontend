@@ -21,6 +21,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const moduleParam = searchParams.get("module");
+    const highlightParam = searchParams.get("highlight");
     
     // Component mapping for each module
     const componentMap: Record<string, React.ComponentType<any>> = {
@@ -171,13 +172,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
             <div className={"container"}>
                 {/* Fraud Detection Modules */}
-                <div className="tab-container" style={{ marginTop: "2rem" }}>
-                    <div style={{ 
-                        background: 'white', 
-                        padding: '1.5rem 2rem', 
-                        borderRadius: '12px 12px 0 0',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                    }}>
+                <div className="module-section" style={{ marginTop: "2rem" }}>
+                    {/* Section Header - Separated */}
+                    <div className="section-header">
                         <h2 style={{ 
                             fontSize: '1.75rem', 
                             fontWeight: '700', 
@@ -189,52 +186,57 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                         }}>
                             🔍 Fraud Detection Modules
                         </h2>
-                        <p style={{ color: 'var(--gray)', fontSize: '1rem' }}>
+                        <p style={{ color: 'var(--gray)', fontSize: '1rem', margin: 0 }}>
                             Select a module to analyze transactions and submit data for fraud detection
                         </p>
                     </div>
-                    <div className="tab-list">
-                        {tabs.map((tab) => (
-                            <button
-                                key={tab.id}
-                                className={`tab ${activeTab === tab.id ? "active" : ""}`}
-                                onClick={() => setActiveTab(tab.id)}
-                            >
-                                {tab.label}
-                                {moduleCounts && (
-                                    <span
-                                        style={{
-                                            marginLeft: "0.5rem",
-                                            fontSize: "0.8em",
-                                            background:
-                                                activeTab === tab.id
-                                                    ? "var(--primary)"
-                                                    : "#e2e8f0",
-                                            color:
-                                                activeTab === tab.id
-                                                    ? "white"
-                                                    : "var(--gray)",
-                                            padding: "0.2rem 0.6rem",
-                                            borderRadius: "999px",
-                                            fontWeight: "bold",
-                                            minWidth: "24px",
-                                            textAlign: "center",
-                                            display: "inline-block",
-                                        }}
-                                    >
-                                        {moduleCounts?.[`${tab.id}_count`] ?? 0}
-                                    </span>
-                                )}
-                            </button>
-                        ))}
+
+                    {/* Tab Navigation - Separated */}
+                    <div className="tab-navigation">
+                        <div className="tab-list">
+                            {tabs.map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    className={`tab ${activeTab === tab.id ? "active" : ""}`}
+                                    onClick={() => setActiveTab(tab.id)}
+                                >
+                                    {tab.label}
+                                    {moduleCounts && (
+                                        <span
+                                            style={{
+                                                marginLeft: "0.5rem",
+                                                fontSize: "0.8em",
+                                                background:
+                                                    activeTab === tab.id
+                                                        ? "rgba(255,255,255,0.3)"
+                                                        : "rgba(102, 126, 234, 0.1)",
+                                                color:
+                                                    activeTab === tab.id
+                                                        ? "white"
+                                                        : "var(--primary)",
+                                                padding: "0.2rem 0.6rem",
+                                                borderRadius: "999px",
+                                                fontWeight: "bold",
+                                                minWidth: "24px",
+                                                textAlign: "center",
+                                                display: "inline-block",
+                                            }}
+                                        >
+                                            {moduleCounts?.[`${tab.id}_count`] ?? 0}
+                                        </span>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
-                    {/* Tab Content */}
-                    <div className="tab-content">
+                    {/* Tab Content - Separated */}
+                    <div className="tab-body">
                         {ActiveComponent && (
                             <ActiveComponent
                                 key={`${activeTab}-${refreshKey}`}
                                 onUpdate={handleUpdate}
+                                highlightId={highlightParam ? parseInt(highlightParam) : undefined}
                             />
                         )}
                     </div>

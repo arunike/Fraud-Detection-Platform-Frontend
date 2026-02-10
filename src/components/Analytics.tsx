@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { LogOut, BarChart3, Shield, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { amlAPI } from "../api";
+import { amlAPI, metricsAPI } from "../api";
 import { fetchModules, ModuleConfig } from "../config/modules";
 import StatisticsCard from "./StatisticsCard";
 import DetectionTrendsChart from "./charts/DetectionTrendsChart";
@@ -47,17 +47,34 @@ interface Statistics {
     }>;
 }
 
+interface MetricsSnapshot {
+    cache: {
+        aml_events: number;
+        credit_events: number;
+        insurance_events: number;
+        market_events: number;
+    };
+    async_audits: {
+        events: number;
+    };
+}
+
 const Analytics: React.FC<AnalyticsProps> = ({ onLogout }) => {
     const navigate = useNavigate();
     const [statistics, setStatistics] = useState<Statistics | null>(null);
+    const [metrics, setMetrics] = useState<MetricsSnapshot | null>(null);
     const [modules, setModules] = useState<ModuleConfig[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         loadStatistics();
+        loadMetrics();
         loadModules();
         // Auto-refresh every 30 seconds
-        const interval = setInterval(loadStatistics, 30000);
+        const interval = setInterval(() => {
+            loadStatistics();
+            loadMetrics();
+        }, 30000);
         return () => clearInterval(interval);
     }, []);
 
@@ -78,6 +95,15 @@ const Analytics: React.FC<AnalyticsProps> = ({ onLogout }) => {
         }
     };
 
+    const loadMetrics = async () => {
+        try {
+            const response = await metricsAPI.getMetrics();
+            setMetrics(response);
+        } catch (error) {
+            console.error("Failed to load metrics:", error);
+        }
+    };
+
     const calculateDetectionRate = () => {
         if (!statistics) return 0;
         const total = statistics.totals.total_detections;
@@ -95,8 +121,9 @@ const Analytics: React.FC<AnalyticsProps> = ({ onLogout }) => {
         return (weighted * 100).toFixed(0);
     };
 
-    const handleAlertClick = (module: string) => {
-        navigate(`/detection?module=${module}`);
+    const handleAlertClick = (alert: any) => {
+        // Navigate to detection page with module and highlight the specific record
+        navigate(`/detection?module=${alert.module}&highlight=${alert.record_id}`);
     };
 
     return (
@@ -214,6 +241,43 @@ const Analytics: React.FC<AnalyticsProps> = ({ onLogout }) => {
                                 color="#f59e0b"
                             />
                         </div>
+
+                        {metrics && (
+                            <div style={{ marginBottom: "2rem" }}>
+                                <div style={{
+                                    fontWeight: 600,
+                                    color: "var(--dark)",
+                                    marginBottom: "0.75rem"
+                                }}>
+                                    System Signals
+                                </div>
+                                <div
+                                    style={{
+                                        display: "grid",
+                                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                                        gap: "1.5rem"
+                                    }}
+                                >
+                                    <StatisticsCard
+                                        title="Cache Events"
+                                        value={
+                                            metrics.cache.aml_events +
+                                            metrics.cache.credit_events +
+                                            metrics.cache.insurance_events +
+                                            metrics.cache.market_events
+                                        }
+                                        icon="activity"
+                                        color="#6366f1"
+                                    />
+                                    <StatisticsCard
+                                        title="Async Audits"
+                                        value={metrics.async_audits.events}
+                                        icon="alert"
+                                        color="#ef4444"
+                                    />
+                                </div>
+                            </div>
+                        )}
 
                         {/* Charts Grid */}
                         <div

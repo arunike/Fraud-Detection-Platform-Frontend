@@ -25,7 +25,10 @@ function CreditTab({ onUpdate }) {
     const loadHistory = async () => {
         try {
             const response = await creditAPI.list({ page_size: 10 });
-            setHistory(response.data.results || []);
+            // Handle both array and object with results property
+            const data = Array.isArray(response.data) ? response.data : (response.data.results || []);
+            setHistory(data);
+            console.log('Credit History loaded:', data.length, 'items');
         } catch (err) {
             console.error("Failed to load history:", err);
         }
@@ -95,17 +98,7 @@ function CreditTab({ onUpdate }) {
 
     return (
         <div>
-            <h2
-                style={{
-                    marginBottom: "1.5rem",
-                    fontSize: "1.5rem",
-                    fontWeight: "bold",
-                }}
-            >
-                📊 Credit Risk Assessment
-            </h2>
-
-            <div className="grid grid-2">
+            <div className="grid grid-2" style={{ marginBottom: '2rem' }}>
                 {/* Form */}
                 <div className="card">
                     <div
@@ -117,12 +110,13 @@ function CreditTab({ onUpdate }) {
                         }}
                     >
                         <h3 style={{ fontSize: "1.25rem", fontWeight: "600" }}>
-                            Applicant Information
+                            📋 Applicant Information
                         </h3>
                         <button
                             type="button"
                             onClick={generateTestData}
                             className="btn btn-secondary"
+                            style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
                         >
                             <Dice5 size={18} />
                             Generate Test Data
@@ -285,7 +279,7 @@ function CreditTab({ onUpdate }) {
                                         marginTop: "0.5rem",
                                     }}
                                 >
-                                    Credit Score: {result.credit_score}/850
+                                    Credit Score: {typeof result.credit_score === 'number' ? Math.round(result.credit_score) : result.credit_score}/850
                                 </p>
                                 <p
                                     style={{
@@ -325,7 +319,7 @@ function CreditTab({ onUpdate }) {
                                                             .toUpperCase()}
                                                         :
                                                     </strong>{" "}
-                                                    {JSON.stringify(value)}
+                                                    {typeof value === 'number' ? value.toFixed(2) : value}
                                                 </div>
                                             ),
                                         )}
@@ -347,17 +341,25 @@ function CreditTab({ onUpdate }) {
             </div>
 
             {/* History */}
-            {history.length > 0 && (
-                <div className="card" style={{ marginTop: "1.5rem" }}>
-                    <h3
-                        style={{
-                            fontSize: "1.25rem",
-                            fontWeight: "600",
-                            marginBottom: "1rem",
-                        }}
-                    >
-                        Recent Assessments
-                    </h3>
+            <div className="card" style={{ marginTop: "1.5rem" }}>
+                <h3
+                    style={{
+                        fontSize: "1.25rem",
+                        fontWeight: "600",
+                        marginBottom: "1rem",
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                    }}
+                >
+                    📅 Recent Assessments
+                    <span style={{
+                        fontSize: '0.9rem',
+                        color: 'var(--gray)',
+                        fontWeight: 'normal'
+                    }}>({history.length})</span>
+                </h3>
+                {history.length > 0 ? (
                     <div style={{ overflowX: "auto" }}>
                         <table>
                             <thead>
@@ -370,34 +372,57 @@ function CreditTab({ onUpdate }) {
                                 </tr>
                             </thead>
                             <tbody>
-                                {history.map((item, idx) => (
-                                    <tr key={idx}>
-                                        <td>{item.applicant_id}</td>
-                                        <td>{item.credit_score}/850</td>
-                                        <td>
-                                            <span
-                                                className={`badge badge-${item.risk_tier === "LOW" ? "success" : item.risk_tier === "MEDIUM" ? "warning" : "danger"}`}
-                                            >
-                                                {item.risk_tier}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span
-                                                className={`badge badge-${item.decision === "APPROVE" ? "success" : item.decision === "REJECT" ? "danger" : "warning"}`}
-                                            >
-                                                {item.decision}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            {formatLocalDateTime(item.timestamp)}
-                                        </td>
-                                    </tr>
-                                ))}
+                                {history.map((item, idx) => {
+                                    const score = item.credit_score || item.risk_score || 0;
+                                    return (
+                                        <tr key={idx}>
+                                            <td>{item.applicant_id}</td>
+                                            <td>
+                                                <strong style={{color: 'var(--primary)'}}>
+                                                    {typeof score === 'number' ? Math.round(score) : score}/850
+                                                </strong>
+                                            </td>
+                                            <td>
+                                                <span
+                                                    className={`badge badge-${
+                                                        score >= 750 ? "success" : 
+                                                        score >= 650 ? "warning" : "danger"
+                                                    }`}
+                                                >
+                                                    {score >= 750 ? 'LOW' : 
+                                                     score >= 650 ? 'MEDIUM' : 'HIGH'}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span
+                                                    className={`badge badge-${item.decision === "APPROVED" ? "success" : item.decision === "DECLINED" ? "danger" : "warning"}`}
+                                                >
+                                                    {item.decision?.replace('_', ' ')}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {formatLocalDateTime(item.timestamp)}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
-                </div>
-            )}
+                ) : (
+                    <div style={{
+                        textAlign: 'center',
+                        padding: '3rem',
+                        color: 'var(--gray)',
+                        background: 'rgba(102, 126, 234, 0.03)',
+                        borderRadius: '8px'
+                    }}>
+                        <p style={{ margin: 0, fontSize: '1.1rem' }}>
+                            No assessments yet. Submit an application above to get started.
+                        </p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

@@ -22,7 +22,10 @@ function MarketTab({ onUpdate }) {
     const loadHistory = async () => {
         try {
             const response = await marketAPI.list({ page_size: 10 });
-            setHistory(response.data.results || []);
+            // Handle both array and object with results property
+            const data = Array.isArray(response.data) ? response.data : (response.data.results || []);
+            setHistory(data);
+            console.log('Market History loaded:', data.length, 'items');
         } catch (err) {
             console.error("Failed to load history:", err);
         }
@@ -81,17 +84,7 @@ function MarketTab({ onUpdate }) {
 
     return (
         <div>
-            <h2
-                style={{
-                    marginBottom: "1.5rem",
-                    fontSize: "1.5rem",
-                    fontWeight: "bold",
-                }}
-            >
-                📈 Market Manipulation Detection
-            </h2>
-
-            <div className="grid grid-2">
+            <div className="grid grid-2" style={{ marginBottom: '2rem' }}>
                 {/* Form */}
                 <div className="card">
                     <div
@@ -103,12 +96,13 @@ function MarketTab({ onUpdate }) {
                         }}
                     >
                         <h3 style={{ fontSize: "1.25rem", fontWeight: "600" }}>
-                            Trading Activity
+                            📈 Trading Activity
                         </h3>
                         <button
                             type="button"
                             onClick={generateTestData}
                             className="btn btn-secondary"
+                            style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
                         >
                             <Dice5 size={18} />
                             Generate Test Data
@@ -316,17 +310,25 @@ function MarketTab({ onUpdate }) {
             </div>
 
             {/* History */}
-            {history.length > 0 && (
-                <div className="card" style={{ marginTop: "1.5rem" }}>
-                    <h3
-                        style={{
-                            fontSize: "1.25rem",
-                            fontWeight: "600",
-                            marginBottom: "1rem",
-                        }}
-                    >
-                        Recent Alerts
-                    </h3>
+            <div className="card" style={{ marginTop: "1.5rem" }}>
+                <h3
+                    style={{
+                        fontSize: "1.25rem",
+                        fontWeight: "600",
+                        marginBottom: "1rem",
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                    }}
+                >
+                    📅 Recent Market Alerts
+                    <span style={{
+                        fontSize: '0.9rem',
+                        color: 'var(--gray)',
+                        fontWeight: 'normal'
+                    }}>({history.length})</span>
+                </h3>
+                {history.length > 0 ? (
                     <div style={{ overflowX: "auto" }}>
                         <table>
                             <thead>
@@ -353,7 +355,7 @@ function MarketTab({ onUpdate }) {
                                         : "LOW";
                                     const confidence = firstAlert
                                         ? firstAlert.confidence
-                                        : 0;
+                                        : null;
 
                                     return (
                                         <tr key={idx}>
@@ -379,10 +381,8 @@ function MarketTab({ onUpdate }) {
                                                 </span>
                                             </td>
                                             <td>
-                                                {confidence
-                                                    ? (
-                                                          confidence * 100
-                                                      ).toFixed(1) + "%"
+                                                {confidence != null
+                                                    ? (confidence * 100).toFixed(1) + "%"
                                                     : "N/A"}
                                             </td>
                                             <td>
@@ -394,8 +394,20 @@ function MarketTab({ onUpdate }) {
                             </tbody>
                         </table>
                     </div>
-                </div>
-            )}
+                ) : (
+                    <div style={{
+                        textAlign: 'center',
+                        padding: '3rem',
+                        color: 'var(--gray)',
+                        background: 'rgba(102, 126, 234, 0.03)',
+                        borderRadius: '8px'
+                    }}>
+                        <p style={{ margin: 0, fontSize: '1.1rem' }}>
+                            No market alerts yet. Submit trading activity above to get started.
+                        </p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

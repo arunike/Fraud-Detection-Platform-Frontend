@@ -111,6 +111,14 @@ export const modulesAPI = {
     },
 };
 
+// Metrics API
+export const metricsAPI = {
+    getMetrics: async () => {
+        const response = await api.get('/metrics/');
+        return response.data;
+    },
+};
+
 // AML API
 export const amlAPI = {
     detect: (data: any) => api.post('/aml/detect/', data),
